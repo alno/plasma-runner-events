@@ -7,18 +7,22 @@ This is Plasma Runner Plugin, which provides you ability to add new events or to
 * `todo Complete my work; tomorrow 12:30` - create todo with given summary and deadline datetime;
 * `event Something; 13:30` - something at 13:30 today;
 * `event Other event; yesterday`
+* `todo Buy new phone; in 2 years`
+* `todo Complete site design; in 2 days from 10:30`
 * And others...
 
 Features
 --------
 
 Now following date/time specifications are available:
-* *today*
-* *yesteday*
-* *tomorrow*
-* *now*
+* `today`
+* `yesteday`
+* `tomorrow`
+* `now`
 * Time format - `h:m`
 * Date format - `d.M.yyyy`
+* `in 2 minutes/hours [from ...]`
+* `in 10 days/weeks/months/years [from ...]`
 
 Installation from packages
 --------------------------
