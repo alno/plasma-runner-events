@@ -5,19 +5,33 @@
 #include <plasma/abstractrunner.h>
 #include <KIcon>
 
+#include <Akonadi/Collection>
+
 // Define our plasma Runner
-class events : public Plasma::AbstractRunner {
+class EventsRunner : public Plasma::AbstractRunner {
     Q_OBJECT
 
 public:
     // Basic Create/Destroy
-    events( QObject *parent, const QVariantList& args );
-    ~events();
+    EventsRunner( QObject *parent, const QVariantList& args );
+    ~EventsRunner();
 
     void match(Plasma::RunnerContext &context);
     void run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match);
+    
+    void reloadConfiguration();
+    
+private slots:
+    
+    /**
+      Called when Akonadi collections loaded
+    */
+    void collectionsReceived( const Akonadi::Collection::List & list );
+    
+private:
+    
+    Akonadi::Collection eventsCollection;
+    Akonadi::Collection todoCollection;
 };
-// This is the command that links your applet to the .desktop file
-K_EXPORT_PLASMA_RUNNER(events, events)
 
 #endif
