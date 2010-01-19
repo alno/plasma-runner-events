@@ -38,6 +38,8 @@ private:
     
     Akonadi::Collection eventsCollection;
     Akonadi::Collection todoCollection;
+    
+    KIcon icon;
 };
 
 #endif

@@ -1,7 +1,8 @@
 #include "events.h"
 
 #include <KDebug>
-#include <KIcon>
+#include <KMimeType>
+#include <KIconLoader>
 
 #include <Akonadi/CollectionFetchJob>
 #include <Akonadi/ItemCreateJob>
@@ -34,6 +35,8 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     Q_UNUSED(args);
     
     setObjectName("events_runner");
+            
+    icon = KIcon( KIconLoader().loadMimeTypeIcon( KMimeType::mimeType( "text/calendar" )->iconName(), KIconLoader::NoGroup ) );
     
     CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
     
@@ -87,6 +90,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         match.setData( data );
         match.setId( "event" );  
         match.setRelevance( 0.8 );
+        match.setIcon( icon );
         
         context.addMatch( term, match );
      }
