@@ -10,7 +10,7 @@ add_definitions (${QT_DEFINITIONS} ${KDE4_DEFINITIONS})
 include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${KDEPIMLIBS_INCLUDE_DIR} ${KDE4_INCLUDES})
 
 # We add our source code here
-set(events_SRCS events.cpp)
+set(events_SRCS events.cpp datetime_parser.cpp)
 
 kde4_add_plugin(krunner_events ${events_SRCS})
 target_link_libraries(krunner_events ${KDE4_PLASMA_LIBS} ${KDE4_KDEUI_LIBS} ${KDE4_AKONADI_LIBS} ${KDEPIMLIBS_KCAL_LIBS})

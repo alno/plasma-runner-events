@@ -2,12 +2,16 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include <plasma/abstractrunner.h>
-#include <KIcon>
+#include <Plasma/AbstractRunner>
 
 #include <Akonadi/Collection>
 
-// Define our plasma Runner
+#include <KIcon>
+
+#include "datetime_parser.h"
+
+/**
+*/
 class EventsRunner : public Plasma::AbstractRunner {
     Q_OBJECT
 
@@ -29,6 +33,8 @@ private slots:
     void collectionsReceived( const Akonadi::Collection::List & list );
     
 private:
+
+    DateTimeParser dateTimeParser;
     
     Akonadi::Collection eventsCollection;
     Akonadi::Collection todoCollection;

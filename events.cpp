@@ -35,7 +35,6 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     
     setObjectName("events_runner");
     
-    // fetching all collections containing emails recursively, starting at the root collection
     CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
     
     connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
@@ -66,29 +65,34 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         return;    
     
     if ( term.startsWith( eventKeyword ) ) {
-        QString summary = term.mid( eventKeyword.length() ).trimmed();
+        QStringList args = term.mid( eventKeyword.length() ).split( ";" );
+                
+        if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
+            return;
         
-        if ( summary.length() < 3 )
+        QString summary = args[0].trimmed();
+        KDateTime startDate = dateTimeParser.parse( args[1].trimmed() );
+        
+        if ( !startDate.isValid() )
             return;
         
         QMap<QString,QVariant> data;
         data["type"] = Event;
         data["summary"] = summary;
-        data["start"] = KDateTime::currentLocalDateTime().toString();
+        data["start"] = startDate.toString();
         
         Plasma::QueryMatch match( this );
         
-        match.setText(i18n( "Create event \"%1\"", summary ));        
+        match.setText( i18n( "Create event \"%1\" at %2 %3", summary, startDate.isDateOnly() ? "" : startDate.time().toString("hh:mm") , startDate.date().toString("dd.MM.yyyy") ) );        
         match.setData( data );
-        match.setId( summary );  
+        match.setId( "event" );  
         match.setRelevance( 0.8 );
         
         context.addMatch( term, match );
      }
 }
 
-void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match)
-{    
+void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match) {    
     Q_UNUSED(context)
     
     QMap<QString,QVariant> data = match.data().toMap();
