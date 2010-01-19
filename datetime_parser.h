@@ -23,6 +23,9 @@ private:
     KDateTime merge( const QDate & date, const QString & s, int offset );
     KDateTime merge( const QTime & time, const QString & s, int offset );
     
+    KDateTime parseOrToday( const QString & s );
+    KDateTime parseOrNow( const QString & s );
+    
 private:
     QString now, today, tomorrow, yesterday;
     
