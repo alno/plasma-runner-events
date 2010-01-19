@@ -15,6 +15,7 @@ Features
 --------
 
 Now following date/time specifications are available:
+
 * `today`
 * `yesteday`
 * `tomorrow`
