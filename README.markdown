@@ -58,3 +58,4 @@ Restart krunner:
 Alt-F2 to launch KRunner and in the runners list you will find events runner.
 
 Copyright © 2009 Alexey Noskov, released under the GPLv3 license 
+Idea by SebastianHRO, published at http://forum.kde.org/brainstorm.php#idea85167
