@@ -3,11 +3,20 @@
 
 #include <KDateTime>
 
+#include <QMap>
+
 class DateTimeParser {
 public:
     DateTimeParser();
     
     KDateTime parse( const QString & s );
+    
+    void addTimeFormat( const QString & s );
+    void addDateFormat( const QString & s );
+    
+private:
+    
+    typedef QMap< QString, QRegExp > FormatMap;
     
 private:
     
@@ -16,6 +25,9 @@ private:
     
 private:
     QString now, today, tomorrow, yesterday;
+    
+    FormatMap timeFormats;
+    FormatMap dateFormats;
 };
 
 #endif

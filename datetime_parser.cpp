@@ -3,32 +3,81 @@
 #include <KLocalizedString>
 #include <QDebug>
 
+#include <iostream>
+
 DateTimeParser::DateTimeParser() {
     now = i18n("now");
     today = i18n("today");
     tomorrow = i18n("tomorrow");
     yesterday = i18n("yesterday");
+    
+    addTimeFormat( "h:mm" );
+    
+    addDateFormat( "d.M.yyyy" );
+}
+
+void DateTimeParser::addTimeFormat( const QString & s ) {
+    if ( timeFormats.contains( s ) )
+        return;
+    
+    QString formatRegexp = QRegExp::escape( s );
+    
+    formatRegexp.replace( QRegExp("hh|mm|ss"), "\\d\\d" );
+    formatRegexp.replace( QRegExp("h|m|s"), "\\d\\d?" );
+    formatRegexp.replace( "zzz", "\\d\\d\\d" );
+    formatRegexp.replace( "z", "\\d\\d?\\d?" );
+    formatRegexp.replace( "AP", "(AM|PM)" );
+    formatRegexp.replace( "ap", "(am|pm)" );
+    
+    timeFormats.insert( s, QRegExp( formatRegexp ) );
+}
+
+void DateTimeParser::addDateFormat( const QString & s ) {
+    if ( dateFormats.contains( s ) )
+        return;
+    
+    QString formatRegexp = QRegExp::escape( s );
+        
+    formatRegexp.replace( 'd', 'D' );
+    formatRegexp.replace( "yyyy", "\\d\\d\\d\\d" );
+    formatRegexp.replace( QRegExp("DDDD|MMMM"), "\\w+" );
+    formatRegexp.replace( "DDD", "(Mon|Tue|Wed|Thu|Fri|Sat|Sun)" );
+    formatRegexp.replace( "MMM", "(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)" );
+    formatRegexp.replace( QRegExp("DD|MM|yy"), "\\d\\d" );
+    formatRegexp.replace( QRegExp("D|M"), "\\d\\d?" );
+    
+    dateFormats.insert( s, QRegExp( formatRegexp ) );
 }
 
 KDateTime DateTimeParser::parse( const QString& s ) {
-    if ( s.isEmpty() )
-        return KDateTime();
+    std::cerr << s.toUtf8().data() << std::endl;
     
-    QRegExp time("\\d\\d?\\:\\d\\d");
+    if ( s.isEmpty() )
+        return KDateTime();    
     
     if ( s.startsWith( now ) ) {
         return KDateTime::currentLocalDateTime();
     } else if ( s.startsWith( today ) ) {
         return merge( QDate::currentDate(), s, today.length() );
     } else if ( s.startsWith( tomorrow ) ) {
-        return merge( QDate::currentDate().addDays( 1 ), s, today.length() );
+        return merge( QDate::currentDate().addDays( 1 ), s, tomorrow.length() );
     } else if ( s.startsWith( yesterday ) ) {
-        return merge( QDate::currentDate().addDays( -1 ), s, today.length() );
-    } else if ( time.indexIn( s ) == 0 ) {
-        return merge( QTime::fromString( s.left( time.matchedLength() ), "h:mm" ), s, time.matchedLength() );
+        return merge( QDate::currentDate().addDays( -1 ), s, yesterday.length() );
     }
     
-    return KDateTime::fromString( s );
+    for ( FormatMap::iterator it = timeFormats.begin(); it != timeFormats.end(); ++ it )
+        if ( it.value().indexIn( s ) == 0 )
+            return merge( QTime::fromString( s.left( it.value().matchedLength() ), it.key() ), s, it.value().matchedLength() );
+    
+    for ( FormatMap::iterator it = dateFormats.begin(); it != dateFormats.end(); ++ it ) {
+        std::cerr << it.value().pattern().toUtf8().data() << std::endl;
+        if ( it.value().indexIn( s ) == 0 )
+            return merge( QDate::fromString( s.left( it.value().matchedLength() ), it.key() ), s, it.value().matchedLength() );
+    }
+    
+    std::cerr << "!!" << std::endl;
+        
+    return KDateTime();
 }
 
 KDateTime DateTimeParser::merge( const QDate & date, const QString & s, int offset ) {
