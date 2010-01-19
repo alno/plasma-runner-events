@@ -38,7 +38,7 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     // fetching all collections containing emails recursively, starting at the root collection
     CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
     
-    connect( job, SIGNAL( collectionsReceived(Collection::List) ), this, SLOT( myCollectionsReceived(Collection::List) ) );
+    connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
 }
 
 EventsRunner::~EventsRunner() {
@@ -63,8 +63,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
     const QString term = context.query();
     
     if ( term.length() < 8 )
-        return;
-    
+        return;    
     
     if ( term.startsWith( eventKeyword ) ) {
         QString summary = term.mid( eventKeyword.length() ).trimmed();
@@ -94,7 +93,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
     
     QMap<QString,QVariant> data = match.data().toMap();
     
-    if ( data["type"] == Event ) {
+    if ( data["type"].toInt() == Event ) {
         if ( !eventsCollection.isValid() ) {
             qDebug() << "No valid collection for events available";
             return;
