@@ -1,0 +1,56 @@
+Events Runner
+=============
+
+This is Plasma Runner Plugin, which provides you ability to add new events or todos to your calendar from KRunner (Alt+F2). With this runner you may enter into KRunner something like following:
+
+* @event Project deadline; 13.02.2010@ - create new event with summary "Project deadline" for 13.02.2010;
+* @todo Complete my work; tomorrow 12:30@ - create todo with given summary and deadline datetime;
+* @event Something; 13:30@ - something at 13:30 today;
+* @event Other event; yesterday@
+
+* And others...
+
+Features
+--------
+
+Now following date/time specifications are available:
+* *today*
+* *yesteday*
+* *tomorrow*
+* *now*
+* Time format - @h:m@
+* Date format - @d.M.yyyy@
+
+Installation from packages
+--------------------------
+
+If you are using Ubuntu Karmic you may install package *plasma-runner-events* from my PPA at https://launchpad.net/~alexey-noskov/+archive/kde
+
+You can add this PPA to your system by adding @ppa:alexey-noskov/kde@ to your system's Software Sources
+
+This PPA can be added to your system manually by copying the lines below and adding them to your system's software sources.
+
+    deb http://ppa.launchpad.net/alexey-noskov/kde/ubuntu karmic main 
+    deb-src http://ppa.launchpad.net/alexey-noskov/kde/ubuntu karmic main 
+
+Build instructions
+------------------
+
+    cd /where/your/runner/is/installed
+    mkdir build
+    cd build
+    cmake -DCMAKE_INSTALL_PREFIX=$KDEDIRS .. 
+    make 
+    sudo make install
+
+(your $KDEDIRS is where you install your KDE 4)
+
+Restart krunner:
+
+    kbuildsycoca4
+    kquitapp krunner
+    krunner
+
+Alt-F2 to launch KRunner and in the runners list you will find events runner.
+
+
