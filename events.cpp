@@ -17,8 +17,8 @@
 K_EXPORT_PLASMA_RUNNER(events_runner, EventsRunner)
 
 // Mime types
-QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
-QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
+QString eventMimeType( "text/calendar" );
+QString todoMimeType( "text/calendar" );
 
 QString eventKeyword( "event" );
 QString todoKeyword( "todo" );
