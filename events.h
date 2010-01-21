@@ -7,6 +7,7 @@
 #include <Akonadi/Collection>
 
 #include <KIcon>
+#include <KJob>
 
 #include "datetime_parser.h"
 
@@ -31,6 +32,7 @@ private slots:
       Called when Akonadi collections loaded
     */
     void collectionsReceived( const Akonadi::Collection::List & list );
+    void jobCompleted( KJob * job );
     
 private:
 

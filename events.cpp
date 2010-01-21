@@ -47,9 +47,12 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
             
     icon = KIcon( KIconLoader().loadMimeTypeIcon( KMimeType::mimeType( "text/calendar" )->iconName(), KIconLoader::NoGroup ) );
     
-    CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
+    qDebug() << "Runner started";
     
-    connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
+    CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
+
+ //   connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
+    connect( job, SIGNAL(result(KJob*)), this, SLOT(jobCompleted(KJob*)) );
 }
 
 EventsRunner::~EventsRunner() {
@@ -58,8 +61,26 @@ EventsRunner::~EventsRunner() {
 void EventsRunner::reloadConfiguration() {
 }
 
+void EventsRunner::jobCompleted( KJob * job ) {
+    qDebug() << "Collections fetched" << endl;
+
+    if ( job->error() ) {
+        qDebug() << "Error occurred: " << job->errorText() << endl;
+        exit( -1 );
+        return;
+    }
+
+    const CollectionFetchJob * fetchJob = qobject_cast<CollectionFetchJob*>( job );
+
+    qDebug() << "There are " << fetchJob->collections().size() << " collections";
+
+    collectionsReceived( fetchJob->collections() );
+}
+
 void EventsRunner::collectionsReceived( const Collection::List & list ) {
     foreach ( const Collection & coll, list ) {
+        qDebug() << coll.name() << ": " << coll.contentMimeTypes();
+
         if ( !eventsCollection.isValid() && coll.contentMimeTypes().contains( eventMimeType ) ) {
             eventsCollection = coll;
         }
