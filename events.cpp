@@ -48,13 +48,14 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
     
     connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
+    
+    describeSyntaxes();
 }
 
 EventsRunner::~EventsRunner() {
 }
 
 void EventsRunner::reloadConfiguration() {
-    describeSyntaxes();
 }
 
 void EventsRunner::collectionsReceived( const Collection::List & list ) {
@@ -72,12 +73,12 @@ void EventsRunner::collectionsReceived( const Collection::List & list ) {
 void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
-    RunnerSyntax eventSyntax( QString("%1 :q:").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:") );
-    eventSyntax.setSearchTermDescription( i18n( "Event description" ) );
+    RunnerSyntax eventSyntax( QString("%1 :q:").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
+    eventSyntax.setSearchTermDescription( i18n( "event description" ) );
     syntaxes.append(eventSyntax);
 
-    RunnerSyntax todoSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:") );
-    eventSyntax.setSearchTermDescription( i18n( "Todo description" ) );
+    RunnerSyntax todoSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
+    todoSyntax.setSearchTermDescription( i18n( "todo description" ) );
     syntaxes.append(todoSyntax);
 
     setSyntaxes(syntaxes);
