@@ -1,10 +1,10 @@
 [Desktop Entry]
 Name=Calendar Events
 Comment=Calendar Events runner
-Icon=
+Icon=korganizer
+Type=Service
 
 X-KDE-ServiceTypes=Plasma/Runner
-Type=Service
 X-KDE-Library=krunner_events
 X-KDE-PluginInfo-Author=Alexey Noskov
 X-KDE-PluginInfo-Email=alexey.noskov@gmail.com
