@@ -4,7 +4,7 @@ Events Runner
 This is Plasma Runner Plugin, which provides you ability to add new events or todos to your calendar from KRunner (Alt+F2). With this runner you may enter into KRunner something like following:
 
 * `event Project deadline; 13.02.2010` - create new event with summary "Project deadline" for 13.02.2010;
-* `todo Complete my work; tomorrow 12:30` - create todo with given summary and deadline datetime;
+* `todo Complete my work; tomorrow 12:30; Business` - create todo with given summary and deadline datetime with category "Business";
 * `event Something; 13:30` - something at 13:30 today;
 * `event Other event; yesterday`
 * `todo Buy new phone; in 2 years`
@@ -24,6 +24,11 @@ Now following date/time specifications are available:
 * Date format - `d.M.yyyy`
 * `in 2 minutes/hours [from ...]`
 * `in 10 days/weeks/months/years [from ...]`
+
+You can specify event categories as third argument like in KOrganizer:
+* `Business`
+* `Education:Exam`
+* `Travel, Holiday
 
 Installation from packages
 --------------------------
