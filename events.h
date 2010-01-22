@@ -45,6 +45,8 @@ private:
 
     Plasma::QueryMatch createQueryMatch( const QString & definition, IncidentType type );
 
+    void describeSyntaxes();
+
 private:
 
     DateTimeParser dateTimeParser;

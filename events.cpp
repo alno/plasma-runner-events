@@ -26,6 +26,7 @@ QString todoKeyword( "todo" );
 using namespace Akonadi;
 
 using Plasma::QueryMatch;
+using Plasma::RunnerSyntax;
 
 static KDateTime variantToDateTime( const QVariant & var ) {
     return var.type() == QVariant::Date ? KDateTime( var.toDate() ) : KDateTime( var.toDateTime() );
@@ -53,6 +54,7 @@ EventsRunner::~EventsRunner() {
 }
 
 void EventsRunner::reloadConfiguration() {
+    describeSyntaxes();
 }
 
 void EventsRunner::collectionsReceived( const Collection::List & list ) {
@@ -65,6 +67,20 @@ void EventsRunner::collectionsReceived( const Collection::List & list ) {
             todoCollection = coll;
         }
     }
+}
+
+void EventsRunner::describeSyntaxes() {
+    QList<RunnerSyntax> syntaxes;
+
+    RunnerSyntax eventSyntax( QString("%1 :q:").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:") );
+    eventSyntax.setSearchTermDescription( i18n( "Event description" ) );
+    syntaxes.append(eventSyntax);
+
+    RunnerSyntax todoSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:") );
+    eventSyntax.setSearchTermDescription( i18n( "Todo description" ) );
+    syntaxes.append(todoSyntax);
+
+    setSyntaxes(syntaxes);
 }
 
 QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRunner::IncidentType type ) {
