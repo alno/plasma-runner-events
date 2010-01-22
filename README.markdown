@@ -29,7 +29,7 @@ You can specify event categories as third argument like in KOrganizer:
 
 * `Business`
 * `Education:Exam`
-* `Travel, Holiday
+* `Travel, Holiday`
 
 Installation from packages
 --------------------------
