@@ -73,6 +73,10 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
     if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
         return QueryMatch( 0 ); // Return invalid match if not enough arguments
 
+    for ( QStringList::Iterator it = args.begin(); it != args.end(); ++it ) {
+        *it = (*it).trimmed(); // Trim all arguments
+    }
+
     KDateTime date = dateTimeParser.parse( args[1].trimmed() );
 
     if ( !date.isValid() )
@@ -81,19 +85,30 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
     QMap<QString,QVariant> data; // Map for data
 
     data["type"] = type;
-    data["summary"] = args[0].trimmed();
+    data["summary"] = args[0];
     data["date"] = dateTimeToVariant( date );
-    data["categories"] = args.length() > 2 ? args[2] : "";
+
+    if ( args.length() > 2 && !args[2].isEmpty() ) // If categories info present
+        data["categories"] = args[2];
 
     QueryMatch match( this );
 
     if ( type == Event ) {
-        match.setText( i18n( "Create event \"%1\" at %2, cats '%3'", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), data["categories"].toString() ) );
-        match.setId( eventKeyword );
+        match.setText( i18n( "Create event \"%1\" at %2", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
+        match.setId( eventKeyword + '|' + definition );
     } else if ( type == Todo ) {
-        match.setText( i18n( "Create todo \"%1\" due to %2, cats '%3'", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), data["categories"].toString() ) );
-        match.setId( todoKeyword );
+        match.setText( i18n( "Create todo \"%1\" due to %2", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
+        match.setId( todoKeyword + '|' + definition );
     }
+
+    QString subtext = "";
+
+    if ( data.contains("categories") ) {
+        subtext += i18n( "Categories: %1", data["categories"].toString() );
+    }
+
+    if ( !subtext.isEmpty() )
+        match.setSubtext( subtext );
 
     match.setData( data );
     match.setRelevance( 0.8 );
@@ -135,7 +150,9 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         KCal::Event::Ptr event( new KCal::Event() );
         event->setSummary( data["summary"].toString() );
         event->setDtStart( variantToDateTime( data["date"] ) );
-        event->setCategories( data["categories"].toString() );
+
+        if ( data.contains("categories") ) // Set categories if present
+            event->setCategories( data["categories"].toString() );
             
         Item item( eventMimeType );
         item.setPayload<KCal::Event::Ptr>( event );
@@ -153,7 +170,9 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         todo->setPercentComplete( 0 );
         todo->setHasStartDate( false );
         todo->setHasDueDate( true );
-        todo->setCategories( data["categories"].toString() );
+
+        if ( data.contains("categories") ) // Set categories if present
+            todo->setCategories( data["categories"].toString() );
             
         Item item( todoMimeType );
         item.setPayload<KCal::Todo::Ptr>( todo );
