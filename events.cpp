@@ -84,6 +84,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         
         QString summary = args[0].trimmed();
         KDateTime startDate = dateTimeParser.parse( args[1].trimmed() );
+        QString categories = args.length() > 2 ? args[2] : "";
         
         if ( !startDate.isValid() )
             return;
@@ -92,10 +93,11 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         data["type"] = Event;
         data["summary"] = summary;
         data["dtStart"] = dateTimeToVariant( startDate );
+        data["categories"] = categories;
 
         Plasma::QueryMatch match( this );
 
-        match.setText( i18n( "Create event \"%1\" at %2", summary, startDate.toString( startDate.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
+        match.setText( i18n( "Create event \"%1\" at %2 with categories '%3'", summary, startDate.toString( startDate.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), categories ) );
         match.setData( data );
         match.setId( eventKeyword );
         match.setRelevance( 0.8 );
@@ -110,6 +112,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         
         QString summary = args[0].trimmed();
         KDateTime dueDate = dateTimeParser.parse( args[1].trimmed() );
+        QString categories = args.length() > 2 ? args[2] : "";
         
         if ( !dueDate.isValid() )
             return;
@@ -118,6 +121,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         data["type"] = Todo;
         data["summary"] = summary;
         data["dtDue"] = dateTimeToVariant( dueDate );
+        data["categories"] = categories;
         
         Plasma::QueryMatch match( this );
         
@@ -145,6 +149,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         KCal::Event::Ptr event( new KCal::Event() );
         event->setSummary( data["summary"].toString() );
         event->setDtStart( variantToDateTime( data["dtStart"] ) );
+        event->setCategories( data["categories"].toString() );
             
         Item item( eventMimeType );
         item.setPayload<KCal::Event::Ptr>( event );
@@ -162,6 +167,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         todo->setPercentComplete( 0 );
         todo->setHasStartDate( false );
         todo->setHasDueDate( true );
+        todo->setCategories( data["categories"].toString() );
             
         Item item( todoMimeType );
         item.setPayload<KCal::Todo::Ptr>( todo );
