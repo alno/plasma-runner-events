@@ -26,6 +26,7 @@ Now following date/time specifications are available:
 * `in 10 days/weeks/months/years [from ...]`
 
 You can specify event categories as third argument like in KOrganizer:
+
 * `Business`
 * `Education:Exam`
 * `Travel, Holiday
