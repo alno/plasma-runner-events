@@ -25,10 +25,7 @@ QString todoKeyword( "todo" );
 
 using namespace Akonadi;
 
-enum IncidentType {
-    Event,
-    Todo
-};
+using Plasma::QueryMatch;
 
 static KDateTime variantToDateTime( const QVariant & var ) {
     return var.type() == QVariant::Date ? KDateTime( var.toDate() ) : KDateTime( var.toDateTime() );
@@ -63,11 +60,46 @@ void EventsRunner::collectionsReceived( const Collection::List & list ) {
         if ( !eventsCollection.isValid() && coll.contentMimeTypes().contains( eventMimeType ) ) {
             eventsCollection = coll;
         }
-        
+
         if ( !todoCollection.isValid() && coll.contentMimeTypes().contains( todoMimeType ) ) {
             todoCollection = coll;
         }
     }
+}
+
+QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRunner::IncidentType type ) {
+    QStringList args = definition.split( ";" );
+
+    if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
+        return QueryMatch( 0 ); // Return invalid match if not enough arguments
+
+    KDateTime date = dateTimeParser.parse( args[1].trimmed() );
+
+    if ( !date.isValid() )
+        return QueryMatch( 0 ); // Return invalid match if date is invalid
+
+    QMap<QString,QVariant> data; // Map for data
+
+    data["type"] = type;
+    data["summary"] = args[0].trimmed();
+    data["date"] = dateTimeToVariant( date );
+    data["categories"] = args.length() > 2 ? args[2] : "";
+
+    QueryMatch match( this );
+
+    if ( type == Event ) {
+        match.setText( i18n( "Create event \"%1\" at %2, cats '%3'", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), data["categories"].toString() ) );
+        match.setId( eventKeyword );
+    } else if ( type == Todo ) {
+        match.setText( i18n( "Create todo \"%1\" due to %2, cats '%3'", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), data["categories"].toString() ) );
+        match.setId( todoKeyword );
+    }
+
+    match.setData( data );
+    match.setRelevance( 0.8 );
+    match.setIcon( icon );
+
+    return match;
 }
 
 void EventsRunner::match( Plasma::RunnerContext &context ) {
@@ -77,61 +109,15 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         return;    
     
     if ( term.startsWith( eventKeyword ) ) {
-        QStringList args = term.mid( eventKeyword.length() ).split( ";" );
-                
-        if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
-            return;
+        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), Event );
         
-        QString summary = args[0].trimmed();
-        KDateTime startDate = dateTimeParser.parse( args[1].trimmed() );
-        QString categories = args.length() > 2 ? args[2] : "";
-        
-        if ( !startDate.isValid() )
-            return;
-        
-        QMap<QString,QVariant> data;
-        data["type"] = Event;
-        data["summary"] = summary;
-        data["dtStart"] = dateTimeToVariant( startDate );
-        data["categories"] = categories;
-
-        Plasma::QueryMatch match( this );
-
-        match.setText( i18n( "Create event \"%1\" at %2 with categories '%3'", summary, startDate.toString( startDate.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ), categories ) );
-        match.setData( data );
-        match.setId( eventKeyword );
-        match.setRelevance( 0.8 );
-        match.setIcon( icon );
-
-        context.addMatch( term, match );
+        if ( match.isValid() )
+            context.addMatch( term, match );
      } else if ( term.startsWith( todoKeyword ) ) {
-        QStringList args = term.mid( eventKeyword.length() ).split( ";" );
-    
-        if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
-            return;
+        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), Todo );
         
-        QString summary = args[0].trimmed();
-        KDateTime dueDate = dateTimeParser.parse( args[1].trimmed() );
-        QString categories = args.length() > 2 ? args[2] : "";
-        
-        if ( !dueDate.isValid() )
-            return;
-        
-        QMap<QString,QVariant> data;
-        data["type"] = Todo;
-        data["summary"] = summary;
-        data["dtDue"] = dateTimeToVariant( dueDate );
-        data["categories"] = categories;
-        
-        Plasma::QueryMatch match( this );
-        
-        match.setText( i18n( "Create todo \"%1\" due to %2", summary, dueDate.toString( dueDate.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
-        match.setData( data );
-        match.setId( todoKeyword );  
-        match.setRelevance( 0.8 );
-        match.setIcon( icon );
-        
-        context.addMatch( term, match );
+        if ( match.isValid() )
+            context.addMatch( term, match );
      }
 }
 
@@ -148,7 +134,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         
         KCal::Event::Ptr event( new KCal::Event() );
         event->setSummary( data["summary"].toString() );
-        event->setDtStart( variantToDateTime( data["dtStart"] ) );
+        event->setDtStart( variantToDateTime( data["date"] ) );
         event->setCategories( data["categories"].toString() );
             
         Item item( eventMimeType );
@@ -163,7 +149,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         
         KCal::Todo::Ptr todo( new KCal::Todo() );
         todo->setSummary( data["summary"].toString() );
-        todo->setDtDue( variantToDateTime( data["dtDue"] ) );
+        todo->setDtDue( variantToDateTime( data["date"] ) );
         todo->setPercentComplete( 0 );
         todo->setHasStartDate( false );
         todo->setHasDueDate( true );

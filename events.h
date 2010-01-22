@@ -8,6 +8,8 @@
 
 #include <KIcon>
 
+#include <QMap>
+
 #include "datetime_parser.h"
 
 /**
@@ -32,6 +34,17 @@ private slots:
     */
     void collectionsReceived( const Akonadi::Collection::List & list );
     
+private:
+
+    enum IncidentType {
+        Event,
+        Todo
+    };
+
+private:
+
+    Plasma::QueryMatch createQueryMatch( const QString & definition, IncidentType type );
+
 private:
 
     DateTimeParser dateTimeParser;
