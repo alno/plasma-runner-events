@@ -3,12 +3,12 @@
 #include <KLocalizedString>
 #include <QDebug>
 
-QRegExp inMinutes("in\\s*([+-]?\\d+)\\s*minutes\\s*(from\\s+)?");
-QRegExp inHours("in\\s*([+-]?\\d+)\\s*hours\\s*(from\\s+)?");
-QRegExp inDays("in\\s*([+-]?\\d+)\\s*days\\s*(from\\s+)?");
-QRegExp inWeeks("in\\s*([+-]?\\d+)\\s*weeks\\s*(from\\s+)?");
-QRegExp inMonths("in\\s*([+-]?\\d+)\\s*months\\s*(from\\s+)?");
-QRegExp inYears("in\\s*([+-]?\\d+)\\s*years\\s*(from\\s+)?");
+QRegExp inMinutes("in\\s*([+-]?\\d+)\\s*minutes\\s*(after\\s+)?");
+QRegExp inHours("in\\s*([+-]?\\d+)\\s*hours\\s*(after\\s+)?");
+QRegExp inDays("in\\s*([+-]?\\d+)\\s*days\\s*(after\\s+)?");
+QRegExp inWeeks("in\\s*([+-]?\\d+)\\s*weeks\\s*(after\\s+)?");
+QRegExp inMonths("in\\s*([+-]?\\d+)\\s*months\\s*(after\\s+)?");
+QRegExp inYears("in\\s*([+-]?\\d+)\\s*years\\s*(after\\s+)?");
 
 void DateTimeRange::setDate( const QDate & date, Elements elems ) {
     if ( !date.isValid() )
