@@ -12,12 +12,12 @@ QRegExp inMonths("in\\s*([+-]?\\d+)\\s*months\\s*(after\\s+)?");
 QRegExp inYears("in\\s*([+-]?\\d+)\\s*years\\s*(after\\s+)?");
 
 DateTimeParser::DateTimeParser() {
-    now = i18n("now");
-    today = i18n("today");
-    tomorrow = i18n("tomorrow");
-    yesterday = i18n("yesterday");
-    from = i18n("from") + " ";
-    to = i18n("to") + " ";
+    now = i18nc( "Current time keyword", "now" );
+    today = i18nc( "Current day keyword", "today" );
+    tomorrow = i18nc( "Next day keyword", "tomorrow" );
+    yesterday = i18nc( "Previous day keyword", "yesterday" );
+    from = i18nc( "Keyword for start datetime", "from" ) + " ";
+    to = i18nc( "Keyword for finish datetime", "to" ) + " ";
     
     addTimeFormat( "h:mm" );
     
