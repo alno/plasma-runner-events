@@ -23,3 +23,6 @@ install(TARGETS krunner_events
 install(FILES plasma-runner-events.desktop
         DESTINATION ${SERVICES_INSTALL_DIR})
 
+# Unit tests
+kde4_add_unit_test(datetime_parser_test datetime_parser_test.cpp datetime_parser.cpp)
+target_link_libraries(datetime_parser_test ${KDE4_KDEUI_LIBS} QtTest)
