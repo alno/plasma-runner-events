@@ -36,6 +36,10 @@ static QVariant dateTimeToVariant( const KDateTime & dt ) {
     return dt.isDateOnly() ? QVariant( dt.date() ) : QVariant( dt.dateTime() );
 }
 
+static QString dateTimeToString( const KDateTime & dt ) {
+    return dt.toString( dt.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" );
+}
+
 EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     : Plasma::AbstractRunner(parent, args)
 {
@@ -94,16 +98,17 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
         *it = (*it).trimmed(); // Trim all arguments
     }
 
-    KDateTime date = dateTimeParser.parse( args[1].trimmed() );
+    DateTimeRange range = dateTimeParser.parseRange( args[1].trimmed() );
 
-    if ( !date.isValid() )
+    if ( !range.start.isValid() || !range.finish.isValid() )
         return QueryMatch( 0 ); // Return invalid match if date is invalid
 
     QMap<QString,QVariant> data; // Map for data
 
     data["type"] = type;
     data["summary"] = args[0];
-    data["date"] = dateTimeToVariant( date );
+    data["start"] = dateTimeToVariant( range.start );
+    data["finish"] = dateTimeToVariant( range.finish );
 
     if ( args.length() > 2 && !args[2].isEmpty() ) // If categories info present
         data["categories"] = args[2];
@@ -111,10 +116,18 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
     QueryMatch match( this );
 
     if ( type == Event ) {
-        match.setText( i18n( "Create event \"%1\" at %2", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
+        if ( range.isPoint() )
+            match.setText( i18n( "Create event \"%1\" at %2", data["summary"].toString(), dateTimeToString( range.start ) ) );
+        else
+            match.setText( i18n( "Create event \"%1\" from %2 to %3", data["summary"].toString(), dateTimeToString( range.start ), dateTimeToString( range.finish ) ) );
+
         match.setId( eventKeyword + '|' + definition );
     } else if ( type == Todo ) {
-        match.setText( i18n( "Create todo \"%1\" due to %2", data["summary"].toString(), date.toString( date.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" ) ) );
+        if ( range.isPoint() )
+            match.setText( i18n( "Create todo \"%1\" due to %2", data["summary"].toString(), dateTimeToString( range.finish ) ) );
+        else
+            match.setText( i18n( "Create todo \"%1\" due to %3 starting at %2", data["summary"].toString(), dateTimeToString( range.start ), dateTimeToString( range.finish ) ) );
+
         match.setId( todoKeyword + '|' + definition );
     }
 
@@ -166,11 +179,16 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         
         KCal::Event::Ptr event( new KCal::Event() );
         event->setSummary( data["summary"].toString() );
-        event->setDtStart( variantToDateTime( data["date"] ) );
+
+        event->setDtStart( variantToDateTime( data["start"] ) );
+
+        if ( data["start"] != data["finish"] ) { // Set end date if it differs from start date
+            event->setDtEnd( variantToDateTime( data["finish"] ) );
+        }
 
         if ( data.contains("categories") ) // Set categories if present
             event->setCategories( data["categories"].toString() );
-            
+
         Item item( eventMimeType );
         item.setPayload<KCal::Event::Ptr>( event );
             
@@ -183,10 +201,17 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         
         KCal::Todo::Ptr todo( new KCal::Todo() );
         todo->setSummary( data["summary"].toString() );
-        todo->setDtDue( variantToDateTime( data["date"] ) );
         todo->setPercentComplete( 0 );
-        todo->setHasStartDate( false );
+
+        todo->setDtDue( variantToDateTime( data["finish"] ) );
         todo->setHasDueDate( true );
+
+        if ( data["start"] != data["finish"] ) { // Set start date if it differs from due date
+            todo->setDtStart( variantToDateTime( data["start"] ) );
+            todo->setHasStartDate( true );
+        } else {
+            todo->setHasStartDate( false );
+        }
 
         if ( data.contains("categories") ) // Set categories if present
             todo->setCategories( data["categories"].toString() );
