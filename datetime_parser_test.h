@@ -11,6 +11,8 @@ private slots:
     void testSimpleKeywords();
     void testRelativeKeywords();
     void testPreciseSpecs();
+    void testPointRanges();
+    void testNonPointRanges();
 private:
     DateTimeParser parser;
 };

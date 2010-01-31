@@ -1,5 +1,10 @@
 #include "datetime_parser_test.h"
 
+static void assertRangeEquals( const DateTimeRange & range, const KDateTime & dateTime ) {
+    QVERIFY( range.start == dateTime );
+    QVERIFY( range.finish == dateTime );
+}
+
 void DateTimeParserTest::testSimpleKeywords() {
     QVERIFY( KDateTime::currentLocalDateTime() == parser.parse("now") );
     QVERIFY( KDateTime( KDateTime::currentLocalDate() ) == parser.parse("today") );
@@ -16,6 +21,19 @@ void DateTimeParserTest::testRelativeKeywords() {
 
 void DateTimeParserTest::testPreciseSpecs() {
     QVERIFY( KDateTime( QDate::fromString( "21.10.2009", "d.M.yyyy" ) ) == parser.parse("21.10.2009") );
+}
+
+void DateTimeParserTest::testPointRanges() {
+    DateTimeRange r1 = parser.parseRange("21.10.2009");
+    QVERIFY( r1.isPoint() );
+    QVERIFY( r1.start == KDateTime( QDate::fromString( "21.10.2009", "d.M.yyyy" ) ) );
+
+    DateTimeRange r2 = parser.parseRange("21.10.2009");
+    QVERIFY( r2.isPoint() );
+    QVERIFY( r2.start == KDateTime( QDate::fromString( "21.10.2009", "d.M.yyyy" ) ) );
+}
+
+void DateTimeParserTest::testNonPointRanges() {
 }
 
 QTEST_MAIN(DateTimeParserTest)
