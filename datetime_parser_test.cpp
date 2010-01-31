@@ -39,4 +39,3 @@ void DateTimeParserTest::testNonPointRanges() {
 }
 
 QTEST_MAIN(DateTimeParserTest)
-

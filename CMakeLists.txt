@@ -12,7 +12,7 @@ include_directories(${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR} ${KDEPIMLIBS_INCLUDE
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions")
 
 # We add our source code here
-set(events_SRCS events.cpp datetime_parser.cpp)
+set(events_SRCS events.cpp datetime_parser.cpp datetime_range.cpp)
 
 kde4_add_plugin(krunner_events ${events_SRCS})
 target_link_libraries(krunner_events ${KDE4_PLASMA_LIBS} ${KDE4_KDEUI_LIBS} ${KDE4_AKONADI_LIBS} ${KDEPIMLIBS_KCAL_LIBS})
@@ -24,5 +24,5 @@ install(FILES plasma-runner-events.desktop
         DESTINATION ${SERVICES_INSTALL_DIR})
 
 # Unit tests
-kde4_add_unit_test(datetime_parser_test datetime_parser_test.cpp datetime_parser.cpp)
+kde4_add_unit_test(datetime_parser_test datetime_parser_test.cpp datetime_parser.cpp datetime_range.cpp)
 target_link_libraries(datetime_parser_test ${KDE4_KDEUI_LIBS} QtTest)
