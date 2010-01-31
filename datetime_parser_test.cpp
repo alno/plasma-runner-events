@@ -1,10 +1,5 @@
 #include "datetime_parser_test.h"
 
-static void assertRangeEquals( const DateTimeRange & range, const KDateTime & dateTime ) {
-    QVERIFY( range.start == dateTime );
-    QVERIFY( range.finish == dateTime );
-}
-
 void DateTimeParserTest::testSimpleKeywords() {
     QVERIFY( KDateTime::currentLocalDateTime() == parser.parse("now") );
     QVERIFY( KDateTime( KDateTime::currentLocalDate() ) == parser.parse("today") );
@@ -16,7 +11,7 @@ void DateTimeParserTest::testRelativeKeywords() {
     QVERIFY( KDateTime( KDateTime::currentLocalDate().addDays( 5 ) ) == parser.parse("in 5 days") );
     QVERIFY( KDateTime( KDateTime::currentLocalDate().addMonths( 2 ) ) == parser.parse("in 2 months") );
     QVERIFY( KDateTime( KDateTime::currentLocalDate().addYears( 3 ) ) == parser.parse("in 3 years") );
-    QVERIFY( KDateTime( KDateTime::currentLocalDate().addDays( -1 ).addYears( 3 ) ) == parser.parse("in 3 years from yesterday") );
+    QVERIFY( KDateTime( KDateTime::currentLocalDate().addDays( -1 ).addYears( 3 ) ) == parser.parse("in 3 years after yesterday") );
 }
 
 void DateTimeParserTest::testPreciseSpecs() {
@@ -34,6 +29,13 @@ void DateTimeParserTest::testPointRanges() {
 }
 
 void DateTimeParserTest::testNonPointRanges() {
+    DateTimeRange r1 = parser.parseRange("from today to tomorrow");
+    QVERIFY( r1.start == KDateTime( KDateTime::currentLocalDate() ) );
+    QVERIFY( r1.finish == KDateTime( KDateTime::currentLocalDate().addDays( 1 ) ) );
+
+    DateTimeRange r2 = parser.parseRange("today from 12:00 to 13:00");
+    QVERIFY( r2.start == KDateTime( KDateTime::currentLocalDate(), QTime::fromString("12:00","H:m") ) );
+    QVERIFY( r2.finish == KDateTime( KDateTime::currentLocalDate(), QTime::fromString("13:00","H:m") ) );
 }
 
 QTEST_MAIN(DateTimeParserTest)

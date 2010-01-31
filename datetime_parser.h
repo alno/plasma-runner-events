@@ -53,7 +53,7 @@ private:
     QString parseElement( const QString & s, DateTimeRange & range, DateTimeRange::Elements elems, const QDate & defaultDate = QDate(), const QTime & defaultTime = QTime() );
 
 private:
-    QString now, today, tomorrow, yesterday;
+    QString now, today, tomorrow, yesterday, from, to;
     
     FormatMap timeFormats;
     FormatMap dateFormats;

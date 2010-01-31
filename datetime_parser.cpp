@@ -75,6 +75,8 @@ DateTimeParser::DateTimeParser() {
     today = i18n("today");
     tomorrow = i18n("tomorrow");
     yesterday = i18n("yesterday");
+    from = i18n("from") + " ";
+    to = i18n("to") + " ";
     
     addTimeFormat( "h:mm" );
     
@@ -116,10 +118,20 @@ void DateTimeParser::addDateFormat( const QString & s ) {
 
 DateTimeRange DateTimeParser::parseRange( const QString & s ) {
     DateTimeRange range;
-    QString remaining = s;
+    QString remaining = s.trimmed();
+    DateTimeRange::Elements elems = DateTimeRange::Both;
 
-    while ( !remaining.isEmpty() )
-        remaining = parseElement( remaining, range, DateTimeRange::Both );
+    while ( !remaining.isEmpty() ) {
+        if ( remaining.startsWith( from ) ) {
+            elems = DateTimeRange::Start;
+            remaining = remaining.mid( from.length() ).trimmed();
+        } else if ( remaining.startsWith( to ) ) {
+            elems = DateTimeRange::Finish;
+            remaining = remaining.mid( to.length() ).trimmed();
+        } else {
+            remaining = parseElement( remaining, range, elems );
+        }
+    }
 
     return range;
 }
