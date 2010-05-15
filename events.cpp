@@ -40,8 +40,8 @@ K_EXPORT_PLASMA_RUNNER(events_runner, EventsRunner)
 QString eventMimeType( "text/calendar" );
 QString todoMimeType( "text/calendar" );
 
-QString eventKeyword( "event" );
-QString todoKeyword( "todo" );
+QString eventKeyword( i18nc( "Event creation keyword", "event" ) );
+QString todoKeyword( i18nc( "Todo creation keyword", "todo" ) );
 
 using namespace Akonadi;
 
@@ -57,7 +57,7 @@ static QVariant dateTimeToVariant( const KDateTime & dt ) {
 }
 
 static QString dateTimeToString( const KDateTime & dt ) {
-    return dt.toString( dt.isDateOnly() ? "%d.%m.%Y" : "%H:%M %d.%m.%Y" );
+    return KGlobal::locale()->formatDateTime( dt );
 }
 
 EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
