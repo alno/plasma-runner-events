@@ -148,15 +148,15 @@ void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
     RunnerSyntax eventSyntax( QString("%1 :q:").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
-    eventSyntax.setSearchTermDescription( i18n( "event description" ) );
+    eventSyntax.setSearchTermDescription( i18n( "create event description" ) );
     syntaxes.append(eventSyntax);
 
     RunnerSyntax todoSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
-    todoSyntax.setSearchTermDescription( i18n( "todo description" ) );
+    todoSyntax.setSearchTermDescription( i18n( "create todo description" ) );
     syntaxes.append(todoSyntax);
 
-    RunnerSyntax completeSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
-    completeSyntax.setSearchTermDescription( i18n( "todo description" ) );
+    RunnerSyntax completeSyntax( QString("%1 :q:").arg( completeKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
+    completeSyntax.setSearchTermDescription( i18n( "complete todo description" ) );
     syntaxes.append(completeSyntax);
 
     setSyntaxes(syntaxes);
