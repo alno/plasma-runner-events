@@ -71,7 +71,7 @@ private:
 private:
 
     Plasma::QueryMatch createQueryMatch( const QString & definition, MatchType type );
-    Plasma::QueryMatch createUpdateMatch( const Akonadi::Item & item, MatchType type );
+    Plasma::QueryMatch createUpdateMatch( const Akonadi::Item & item, MatchType type, const QStringList & args );
 
     void describeSyntaxes();
 

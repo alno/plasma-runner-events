@@ -147,15 +147,15 @@ Akonadi::Item::List EventsRunner::selectTodos( const QString & query ) {
 void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
-    RunnerSyntax eventSyntax( QString("%1 :q:").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
+    RunnerSyntax eventSyntax( QString("%1 :q:; summary; date [; categories]").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
     eventSyntax.setSearchTermDescription( i18n( "create event description" ) );
     syntaxes.append(eventSyntax);
 
-    RunnerSyntax todoSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
+    RunnerSyntax todoSyntax( QString("%1 :q:; summary; date [; categories]").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
     todoSyntax.setSearchTermDescription( i18n( "create todo description" ) );
     syntaxes.append(todoSyntax);
 
-    RunnerSyntax completeSyntax( QString("%1 :q:").arg( completeKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
+    RunnerSyntax completeSyntax( QString("%1 :q: [; <percent>]").arg( completeKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
     completeSyntax.setSearchTermDescription( i18n( "complete todo description" ) );
     syntaxes.append(completeSyntax);
 
@@ -221,7 +221,7 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, MatchType
     return match;
 }
 
-Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType type ) {
+Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType type, const QStringList & args ) {
     QueryMatch match( this );
 
     QMap<QString,QVariant> data; // Map for data
@@ -232,15 +232,16 @@ Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType
         KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>();
 
         match.setText( i18n( "Complete todo \"%1\"", todo->summary() ) );
+        match.setSubtext( i18n( "Date: %1", dateTimeToString( todo->dtDue() ) ) );
 
-        QVariant itemVal;
-        itemVal.setValue<Item>( item );
-        data["item"] = itemVal;
+        data["item"] = qVariantFromValue( item );
+        data["percent"] = args.size() > 1 ? args[1].toInt() : 100; // Set percent complete to specified or 100 by default
     }
 
     match.setData( data );
     match.setRelevance( 0.8 );
     match.setIcon( icon );
+    match.setId( QString("update-%1-%2").arg( item.id() ).arg( type )  );
 
     return match;
 }
@@ -262,10 +263,16 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         if ( match.isValid() )
             context.addMatch( term, match );
     } else if ( term.startsWith( completeKeyword ) ) {
-        Item::List todoItems = selectTodos( term.mid( completeKeyword.length() ).trimmed() );
+        QStringList args = term.mid( completeKeyword.length() ).split(';');
+
+        for ( QStringList::Iterator it = args.begin(); it != args.end(); ++it ) {
+            *it = (*it).trimmed(); // Trim all arguments
+        }
+
+        Item::List todoItems = selectTodos( args[0] );
 
         foreach ( const Item & item, todoItems ) {
-            QueryMatch match = createUpdateMatch( item, CompleteTodo );
+            QueryMatch match = createUpdateMatch( item, CompleteTodo, args );
 
             if ( match.isValid() )
                 context.addMatch( term, match );
@@ -331,7 +338,7 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         Item item = data["item"].value<Item>(); // Retrieve item
         KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>(); // Retrieve item payload - todo
 
-        todo->setCompleted( true ); // Mark item as completed
+        todo->setPercentComplete( data["percent"].toInt() ); // Set item percent completed
 
         ItemModifyJob * job = new ItemModifyJob( item, this );
 
