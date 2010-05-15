@@ -25,8 +25,13 @@
 #include <KIconLoader>
 
 #include <Akonadi/CollectionFetchJob>
+#include <Akonadi/ItemFetchJob>
+#include <Akonadi/ItemFetchScope>
 #include <Akonadi/ItemCreateJob>
+#include <Akonadi/ItemModifyJob>
 #include <Akonadi/Item>
+
+#include <QEventLoop>
 
 #include <kcal/event.h>
 #include <kcal/todo.h>
@@ -37,11 +42,12 @@
 K_EXPORT_PLASMA_RUNNER(events_runner, EventsRunner)
 
 // Mime types
-QString eventMimeType( "text/calendar" );
-QString todoMimeType( "text/calendar" );
+QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
+QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
 
 QString eventKeyword( i18nc( "Event creation keyword", "event" ) );
 QString todoKeyword( i18nc( "Todo creation keyword", "todo" ) );
+QString completeKeyword( i18nc( "Todo completion keyword", "complete" ) );
 
 using namespace Akonadi;
 
@@ -61,18 +67,18 @@ static QString dateTimeToString( const KDateTime & dt ) {
 }
 
 EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
-    : Plasma::AbstractRunner(parent, args)
+    : Plasma::AbstractRunner(parent, args), cachedItemsLoaded( false )
 {
     Q_UNUSED(args);
-    
+
     setObjectName("events_runner");
-            
+
     icon = KIcon( KIconLoader().loadMimeTypeIcon( KMimeType::mimeType( "text/calendar" )->iconName(), KIconLoader::NoGroup ) );
-    
+
     CollectionFetchJob *job = new CollectionFetchJob( Collection::root(), CollectionFetchJob::Recursive, this );
-    
+
     connect( job, SIGNAL( collectionsReceived(Akonadi::Collection::List) ), this, SLOT( collectionsReceived(Akonadi::Collection::List) ) );
-    
+
     describeSyntaxes();
 }
 
@@ -94,6 +100,50 @@ void EventsRunner::collectionsReceived( const Collection::List & list ) {
     }
 }
 
+Akonadi::Item::List EventsRunner::selectTodos( const QString & query ) {
+    Item::List matchedItems;
+
+    if ( query.length() < 3 )
+        return matchedItems;
+
+    QMutexLocker locker( &cachedItemsMutex ); // Lock cachedItems access
+
+    if ( !cachedItemsLoaded ) {
+        ItemFetchScope scope;
+        scope.fetchFullPayload( true );
+
+        ItemFetchJob job( todoCollection );
+        job.setFetchScope( scope );
+
+        QEventLoop loop;
+
+        connect( &job, SIGNAL(finished( KJob * )), &loop, SLOT(quit()) );
+
+        job.start();
+        loop.exec();
+
+        cachedItems = job.items();
+    }
+
+    foreach ( const Item & item, cachedItems ) {
+        if ( item.mimeType() != todoMimeType )
+            continue;
+
+        if ( !item.hasPayload<KCal::Todo::Ptr>() )
+            continue;
+
+        KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>();
+
+        if ( !todo )
+            continue;
+
+        if ( todo->summary().contains( query, Qt::CaseInsensitive ) )
+            matchedItems.append( item );
+    }
+
+    return matchedItems;
+}
+
 void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
@@ -105,10 +155,14 @@ void EventsRunner::describeSyntaxes() {
     todoSyntax.setSearchTermDescription( i18n( "todo description" ) );
     syntaxes.append(todoSyntax);
 
+    RunnerSyntax completeSyntax( QString("%1 :q:").arg( todoKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
+    completeSyntax.setSearchTermDescription( i18n( "todo description" ) );
+    syntaxes.append(completeSyntax);
+
     setSyntaxes(syntaxes);
 }
 
-QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRunner::IncidentType type ) {
+QueryMatch EventsRunner::createQueryMatch( const QString & definition, MatchType type ) {
     QStringList args = definition.split( ";" );
 
     if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
@@ -135,14 +189,14 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
 
     QueryMatch match( this );
 
-    if ( type == Event ) {
+    if ( type == CreateEvent ) {
         if ( range.isPoint() )
             match.setText( i18n( "Create event \"%1\" at %2", data["summary"].toString(), dateTimeToString( range.start ) ) );
         else
             match.setText( i18n( "Create event \"%1\" from %2 to %3", data["summary"].toString(), dateTimeToString( range.start ), dateTimeToString( range.finish ) ) );
 
         match.setId( eventKeyword + '|' + definition );
-    } else if ( type == Todo ) {
+    } else if ( type == CreateTodo ) {
         if ( range.isPoint() )
             match.setText( i18n( "Create todo \"%1\" due to %2", data["summary"].toString(), dateTimeToString( range.finish ) ) );
         else
@@ -167,36 +221,69 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, EventsRun
     return match;
 }
 
-void EventsRunner::match( Plasma::RunnerContext &context ) {
-    const QString term = context.query();
-    
-    if ( term.length() < 8 )
-        return;    
-    
-    if ( term.startsWith( eventKeyword ) ) {
-        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), Event );
-        
-        if ( match.isValid() )
-            context.addMatch( term, match );
-     } else if ( term.startsWith( todoKeyword ) ) {
-        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), Todo );
-        
-        if ( match.isValid() )
-            context.addMatch( term, match );
-     }
+Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType type ) {
+    QueryMatch match( this );
+
+    QMap<QString,QVariant> data; // Map for data
+
+    data["type"] = type;
+
+    if ( type == CompleteTodo ) {
+        KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>();
+
+        match.setText( i18n( "Complete todo \"%1\"", todo->summary() ) );
+
+        QVariant itemVal;
+        itemVal.setValue<Item>( item );
+        data["item"] = itemVal;
+    }
+
+    match.setData( data );
+    match.setRelevance( 0.8 );
+    match.setIcon( icon );
+
+    return match;
 }
 
-void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match) {    
+void EventsRunner::match( Plasma::RunnerContext &context ) {
+    const QString term = context.query();
+
+    if ( term.length() < 8 )
+        return;
+
+    if ( term.startsWith( eventKeyword ) ) {
+        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), CreateEvent );
+
+        if ( match.isValid() )
+            context.addMatch( term, match );
+    } else if ( term.startsWith( todoKeyword ) ) {
+        QueryMatch match = createQueryMatch( term.mid( eventKeyword.length() ), CreateTodo );
+
+        if ( match.isValid() )
+            context.addMatch( term, match );
+    } else if ( term.startsWith( completeKeyword ) ) {
+        Item::List todoItems = selectTodos( term.mid( completeKeyword.length() ).trimmed() );
+
+        foreach ( const Item & item, todoItems ) {
+            QueryMatch match = createUpdateMatch( item, CompleteTodo );
+
+            if ( match.isValid() )
+                context.addMatch( term, match );
+        }
+    }
+}
+
+void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match) {
     Q_UNUSED(context)
-    
+
     QMap<QString,QVariant> data = match.data().toMap();
-    
-    if ( data["type"].toInt() == Event ) {
+
+    if ( data["type"].toInt() == CreateEvent ) {
         if ( !eventsCollection.isValid() ) {
             qDebug() << "No valid collection for events available";
             return;
         }
-        
+
         KCal::Event::Ptr event( new KCal::Event() );
         event->setSummary( data["summary"].toString() );
 
@@ -211,14 +298,14 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
 
         Item item( eventMimeType );
         item.setPayload<KCal::Event::Ptr>( event );
-            
+
         new Akonadi::ItemCreateJob( item, eventsCollection, this );
-    } else if ( data["type"].toInt() == Todo ) {
+    } else if ( data["type"].toInt() == CreateTodo ) {
         if ( !todoCollection.isValid() ) {
             qDebug() << "No valid collection for todos available";
             return;
         }
-        
+
         KCal::Todo::Ptr todo( new KCal::Todo() );
         todo->setSummary( data["summary"].toString() );
         todo->setPercentComplete( 0 );
@@ -235,11 +322,22 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
 
         if ( data.contains("categories") ) // Set categories if present
             todo->setCategories( data["categories"].toString() );
-            
+
         Item item( todoMimeType );
         item.setPayload<KCal::Todo::Ptr>( todo );
-            
+
         new Akonadi::ItemCreateJob( item, todoCollection, this );
+    } else if ( data["type"].toInt() == CompleteTodo ) {
+        Item item = data["item"].value<Item>(); // Retrieve item
+        KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>(); // Retrieve item payload - todo
+
+        todo->setCompleted( true ); // Mark item as completed
+
+        ItemModifyJob * job = new ItemModifyJob( item, this );
+
+        job->setIgnorePayload( false ); // Update payload!!
+    } else {
+        qDebug() << "Unknown match type: " << data["type"];
     }
 }
 
