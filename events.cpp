@@ -140,6 +140,9 @@ Akonadi::Item::List EventsRunner::selectItems( const QString & query, const QStr
 
         if ( incidence->summary().contains( query, Qt::CaseInsensitive ) )
             matchedItems.append( item );
+
+        if ( matchedItems.size() >= 10 ) // Stop search when too many are found
+            break;
     }
 
     return matchedItems;
