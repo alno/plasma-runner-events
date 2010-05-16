@@ -14,6 +14,7 @@ This is Plasma Runner Plugin, which provides you ability to add new events or to
 * And others...
 
 Besides of incident creation you may update existing incidences in some ways:
+
 * `complete Buy new phone` - mark selected task as completed!
 * `complete Fix localization issues; 30` - set task as 30%-completed;
 * `comment Birthday party; It was cool!` - append some text to task description.
