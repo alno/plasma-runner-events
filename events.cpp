@@ -48,6 +48,7 @@ QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
 QString eventKeyword( i18nc( "Event creation keyword", "event" ) );
 QString todoKeyword( i18nc( "Todo creation keyword", "todo" ) );
 QString completeKeyword( i18nc( "Todo completion keyword", "complete" ) );
+QString commentKeyword( i18nc( "Event comment keyword", "comment" ) );
 
 using namespace Akonadi;
 
@@ -100,7 +101,7 @@ void EventsRunner::collectionsReceived( const Collection::List & list ) {
     }
 }
 
-Akonadi::Item::List EventsRunner::selectTodos( const QString & query ) {
+Akonadi::Item::List EventsRunner::selectItems( const QString & query, const QStringList & mimeTypes ) {
     Item::List matchedItems;
 
     if ( query.length() < 3 )
@@ -126,18 +127,18 @@ Akonadi::Item::List EventsRunner::selectTodos( const QString & query ) {
     }
 
     foreach ( const Item & item, cachedItems ) {
-        if ( item.mimeType() != todoMimeType )
+        if ( !mimeTypes.contains( item.mimeType() ) )
             continue;
 
-        if ( !item.hasPayload<KCal::Todo::Ptr>() )
+        if ( !item.hasPayload<KCal::Incidence::Ptr>() )
             continue;
 
-        KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>();
+        KCal::Incidence::Ptr incidence = item.payload<KCal::Incidence::Ptr>();
 
-        if ( !todo )
+        if ( !incidence )
             continue;
 
-        if ( todo->summary().contains( query, Qt::CaseInsensitive ) )
+        if ( incidence->summary().contains( query, Qt::CaseInsensitive ) )
             matchedItems.append( item );
     }
 
@@ -147,30 +148,40 @@ Akonadi::Item::List EventsRunner::selectTodos( const QString & query ) {
 void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
-    RunnerSyntax eventSyntax( QString("%1 :q:; summary; date [; categories]").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
+    RunnerSyntax eventSyntax( QString("%1 :q:; summary; date [; categories]").arg( eventKeyword ), i18n("Creates event in calendar by its summary in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
     eventSyntax.setSearchTermDescription( i18n( "create event description" ) );
     syntaxes.append(eventSyntax);
 
-    RunnerSyntax todoSyntax( QString("%1 :q:; summary; date [; categories]").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
+    RunnerSyntax todoSyntax( QString("%1 :q:; summary; date [; categories]").arg( todoKeyword ), i18n("Creates todo in calendar by its summary in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
     todoSyntax.setSearchTermDescription( i18n( "create todo description" ) );
     syntaxes.append(todoSyntax);
 
-    RunnerSyntax completeSyntax( QString("%1 :q: [; <percent>]").arg( completeKeyword ), i18n("Selects todo from calendar by its description in :q: and marks it as completed.") );
+    RunnerSyntax completeSyntax( QString("%1 :q: [; <percent>]").arg( completeKeyword ), i18n("Selects todo from calendar by its summary in :q: and marks it as completed.") );
     completeSyntax.setSearchTermDescription( i18n( "complete todo description" ) );
     syntaxes.append(completeSyntax);
+
+    RunnerSyntax commentSyntax( QString("%1 :q: <comment>").arg( commentKeyword ), i18n("Selects event from calendar by its summary in :q: and append <comment> to its body.") );
+    commentSyntax.setSearchTermDescription( i18n( "comment todo description" ) );
+    syntaxes.append(commentSyntax);
 
     setSyntaxes(syntaxes);
 }
 
-QueryMatch EventsRunner::createQueryMatch( const QString & definition, MatchType type ) {
-    QStringList args = definition.split( ";" );
-
-    if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
-        return QueryMatch( 0 ); // Return invalid match if not enough arguments
+QStringList EventsRunner::splitArguments( const QString & str ) {
+    QStringList args = str.split(';');
 
     for ( QStringList::Iterator it = args.begin(); it != args.end(); ++it ) {
         *it = (*it).trimmed(); // Trim all arguments
     }
+
+    return args;
+}
+
+QueryMatch EventsRunner::createQueryMatch( const QString & definition, MatchType type ) {
+    QStringList args = splitArguments( definition );
+
+    if ( args.size() < 2 || args[0].length() < 3 || args[1].length() < 3 )
+        return QueryMatch( 0 ); // Return invalid match if not enough arguments
 
     DateTimeRange range = dateTimeParser.parseRange( args[1].trimmed() );
 
@@ -236,6 +247,22 @@ Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType
 
         data["item"] = qVariantFromValue( item );
         data["percent"] = args.size() > 1 ? args[1].toInt() : 100; // Set percent complete to specified or 100 by default
+    } else if ( type == CommentIncidence ) {
+        if ( args.size() < 2 ) // There is no comment - skip match
+            return QueryMatch( 0 );
+
+        KCal::Incidence::Ptr incidence = item.payload<KCal::Incidence::Ptr>();
+
+        match.setText( i18n( "Comment incidence \"%1\"", incidence->summary() ) );
+
+        if ( KCal::Todo * todo = dynamic_cast<KCal::Todo *>( incidence.get() ) ) {
+            match.setSubtext( i18n( "Date: %1", dateTimeToString( todo->dtDue() ) ) );
+        } else if ( KCal::Event * event = dynamic_cast<KCal::Event *>( incidence.get() ) ) {
+            match.setSubtext( i18n( "Date: %1", dateTimeToString( event->dtStart() ) ) );
+        }
+
+        data["item"] = qVariantFromValue( item );
+        data["comment"] = args[1];
     }
 
     match.setData( data );
@@ -263,16 +290,21 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         if ( match.isValid() )
             context.addMatch( term, match );
     } else if ( term.startsWith( completeKeyword ) ) {
-        QStringList args = term.mid( completeKeyword.length() ).split(';');
+        QStringList args = splitArguments( term.mid( completeKeyword.length() ) );
+        Item::List items = selectItems( args[0], QStringList( todoMimeType ) );
 
-        for ( QStringList::Iterator it = args.begin(); it != args.end(); ++it ) {
-            *it = (*it).trimmed(); // Trim all arguments
-        }
-
-        Item::List todoItems = selectTodos( args[0] );
-
-        foreach ( const Item & item, todoItems ) {
+        foreach ( const Item & item, items ) {
             QueryMatch match = createUpdateMatch( item, CompleteTodo, args );
+
+            if ( match.isValid() )
+                context.addMatch( term, match );
+        }
+    } else if ( term.startsWith( commentKeyword ) ) {
+        QStringList args = splitArguments( term.mid( commentKeyword.length() ) );
+        Item::List items = selectItems( args[0], QStringList( todoMimeType ) << eventMimeType );
+
+        foreach ( const Item & item, items ) {
+            QueryMatch match = createUpdateMatch( item, CommentIncidence, args );
 
             if ( match.isValid() )
                 context.addMatch( term, match );
@@ -339,6 +371,19 @@ void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::Query
         KCal::Todo::Ptr todo = item.payload<KCal::Todo::Ptr>(); // Retrieve item payload - todo
 
         todo->setPercentComplete( data["percent"].toInt() ); // Set item percent completed
+
+        ItemModifyJob * job = new ItemModifyJob( item, this );
+
+        job->setIgnorePayload( false ); // Update payload!!
+    } else if ( data["type"].toInt() == CommentIncidence ) {
+        Item item = data["item"].value<Item>(); // Retrieve item
+        KCal::Incidence::Ptr incidence = item.payload<KCal::Incidence::Ptr>(); // Retrieve item payload - incidence
+
+        if ( incidence->descriptionIsRich() ) {
+            incidence->setDescription( incidence->richDescription() + "\n\n" + data["comment"].toString(), true);
+        } else {
+            incidence->setDescription( incidence->description() + "\n\n" + data["comment"].toString());
+        }
 
         ItemModifyJob * job = new ItemModifyJob( item, this );
 

@@ -55,20 +55,23 @@ private slots:
     */
     void collectionsReceived( const Akonadi::Collection::List & list );
 
-    /**
-      Select todos by text query synchroniously
-    */
-    Akonadi::Item::List selectTodos( const QString & query );
-
 private:
 
     enum MatchType {
         CreateEvent,
         CreateTodo,
-        CompleteTodo
+        CompleteTodo,
+        CommentIncidence
     };
 
 private:
+
+    QStringList splitArguments( const QString & str );
+
+    /**
+      Select items by text query synchroniously
+    */
+    Akonadi::Item::List selectItems( const QString & query, const QStringList & mimeTypes );
 
     Plasma::QueryMatch createQueryMatch( const QString & definition, MatchType type );
     Plasma::QueryMatch createUpdateMatch( const Akonadi::Item & item, MatchType type, const QStringList & args );
