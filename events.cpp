@@ -38,17 +38,18 @@
 
 #include <boost/shared_ptr.hpp>
 
-// This is the command that links your applet to the .desktop file
+// This is the command that links the applet to the .desktop file
 K_EXPORT_PLASMA_RUNNER(events_runner, EventsRunner)
 
 // Mime types
-QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
-QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
+static const QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
+static const QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
 
-QString eventKeyword( i18nc( "Event creation keyword", "event" ) );
-QString todoKeyword( i18nc( "Todo creation keyword", "todo" ) );
-QString completeKeyword( i18nc( "Todo completion keyword", "complete" ) );
-QString commentKeyword( i18nc( "Event comment keyword", "comment" ) );
+// Keywords
+static const QString eventKeyword( i18nc( "Event creation keyword", "event" ) );
+static const QString todoKeyword( i18nc( "Todo creation keyword", "todo" ) );
+static const QString completeKeyword( i18nc( "Todo completion keyword", "complete" ) );
+static const QString commentKeyword( i18nc( "Event comment keyword", "comment" ) );
 
 using namespace Akonadi;
 

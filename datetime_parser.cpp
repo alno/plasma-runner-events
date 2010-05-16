@@ -23,22 +23,24 @@
 #include <KLocalizedString>
 #include <QDebug>
 
-QRegExp inMinutes( i18nc( "In number of minutes phrase (may contain regexp symbols)", "in %1 minutes (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
-QRegExp inHours( i18nc( "In number of hours phrase (may contain regexp symbols)", "in %1 hours (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
-QRegExp inDays( i18nc( "In number of days phrase (may contain regexp symbols)", "in %1 days (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
-QRegExp inWeeks( i18nc( "In number of weeks phrase (may contain regexp symbols)", "in %1 weeks (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
-QRegExp inMonths( i18nc( "In number of months phrase (may contain regexp symbols)", "in %1 months (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
-QRegExp inYears( i18nc( "In number of years phrase (may contain regexp symbols)", "in %1 years (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+// Phrase regular expressions
+static const QRegExp inMinutes( i18nc( "In number of minutes phrase (may contain regexp symbols)", "in %1 minutes (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+static const QRegExp inHours( i18nc( "In number of hours phrase (may contain regexp symbols)", "in %1 hours (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+static const QRegExp inDays( i18nc( "In number of days phrase (may contain regexp symbols)", "in %1 days (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+static const QRegExp inWeeks( i18nc( "In number of weeks phrase (may contain regexp symbols)", "in %1 weeks (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+static const QRegExp inMonths( i18nc( "In number of months phrase (may contain regexp symbols)", "in %1 months (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+static const QRegExp inYears( i18nc( "In number of years phrase (may contain regexp symbols)", "in %1 years (after)?", "([+-]?\\d+)" ).replace(" ","\\s*") );
+
+// Keywords
+static const QString now = i18nc( "Current time keyword", "now" );
+static const QString today = i18nc( "Current day keyword", "today" );
+static const QString tomorrow = i18nc( "Next day keyword", "tomorrow" );
+static const QString yesterday = i18nc( "Previous day keyword", "yesterday" );
+
+static const QString from = i18nc( "Keyword for start datetime", "from" ) + " ";
+static const QString to = i18nc( "Keyword for finish datetime", "to" ) + " ";
 
 DateTimeParser::DateTimeParser() {
-    now = i18nc( "Current time keyword", "now" );
-    today = i18nc( "Current day keyword", "today" );
-    tomorrow = i18nc( "Next day keyword", "tomorrow" );
-    yesterday = i18nc( "Previous day keyword", "yesterday" );
-
-    from = i18nc( "Keyword for start datetime", "from" ) + " ";
-    to = i18nc( "Keyword for finish datetime", "to" ) + " ";
-    
     addTimeFormat( "h:mm" );
     
     addDateFormat( "d.M.yyyy" );
