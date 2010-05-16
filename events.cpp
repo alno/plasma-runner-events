@@ -39,7 +39,7 @@
 #include <boost/shared_ptr.hpp>
 
 // This is the command that links the applet to the .desktop file
-K_EXPORT_PLASMA_RUNNER(events_runner, EventsRunner)
+K_EXPORT_PLASMA_RUNNER(events, EventsRunner)
 
 // Mime types
 static const QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
@@ -152,12 +152,12 @@ Akonadi::Item::List EventsRunner::selectItems( const QString & query, const QStr
 void EventsRunner::describeSyntaxes() {
     QList<RunnerSyntax> syntaxes;
 
-    RunnerSyntax eventSyntax( QString("%1 :q:; summary; date [; categories]").arg( eventKeyword ), i18n("Creates event in calendar by its summary in :q:, which consists of parts divided by semicolon. Two first obligatory parts are event summary and its start date, third, optional, is list of event categories, divided by comma.") );
-    eventSyntax.setSearchTermDescription( i18n( "create event description" ) );
+    RunnerSyntax eventSyntax( QString("%1 :q:; summary; date [; categories]").arg( eventKeyword ), i18n("Creates event in calendar by its description in :q:, which consists of parts divided by semicolons. The first two parts (both obligatory) are the event summary and its start date. The third, optional, is list of event categories, divided by commas.") );
+    eventSyntax.setSearchTermDescription( i18n( "event description" ) );
     syntaxes.append(eventSyntax);
 
-    RunnerSyntax todoSyntax( QString("%1 :q:; summary; date [; categories]").arg( todoKeyword ), i18n("Creates todo in calendar by its summary in :q:, which consists of parts divided by semicolon. Two first obligatory parts are todo summary and its due date, third, optional, is list of todo categories, divided by comma.") );
-    todoSyntax.setSearchTermDescription( i18n( "create todo description" ) );
+    RunnerSyntax todoSyntax( QString("%1 :q:; summary; date [; categories]").arg( todoKeyword ), i18n("Creates todo in calendar by its description in :q:, which consists of parts divided by semicolons. The first two parts (both obligatory) are a summary of the todo, and its due date. The third, optional, is list of todo categories, divided by commas.") );
+    todoSyntax.setSearchTermDescription( i18n( "todo description" ) );
     syntaxes.append(todoSyntax);
 
     RunnerSyntax completeSyntax( QString("%1 :q: [; <percent>]").arg( completeKeyword ), i18n("Selects todo from calendar by its summary in :q: and marks it as completed.") );
