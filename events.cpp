@@ -214,6 +214,10 @@ QueryMatch EventsRunner::createQueryMatch( const QString & definition, MatchType
             match.setText( i18n( "Create todo \"%1\" due to %3 starting at %2", data["summary"].toString(), dateTimeToString( range.start ), dateTimeToString( range.finish ) ) );
 
         match.setId( todoKeyword + '|' + definition );
+    } else {
+        qDebug() << "Unknown match type: " << type;
+
+        return QueryMatch( 0 );
     }
 
     QString subtext = "";
@@ -263,6 +267,10 @@ Plasma::QueryMatch EventsRunner::createUpdateMatch( const Item & item, MatchType
 
         data["item"] = qVariantFromValue( item );
         data["comment"] = args[1];
+    } else {
+        qDebug() << "Unknown match type: " << type;
+
+        return QueryMatch( 0 );
     }
 
     match.setData( data );
