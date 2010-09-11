@@ -20,36 +20,74 @@
 
 //Project-Includes
 #include "events_config.h"
+#include "collection_selector.h"
+
 //KDE-Includes
 #include <Plasma/AbstractRunner>
 
 K_EXPORT_RUNNER_CONFIG(events, EventsRunnerConfig)
 
-EventsRunnerConfigForm::EventsRunnerConfigForm(QWidget* parent) : QWidget(parent)
-{
+using Akonadi::Collection;
+
+EventsRunnerConfigForm::EventsRunnerConfigForm(QWidget* parent) : QWidget(parent) {
     setupUi( this );
 }
 
-EventsRunnerConfig::EventsRunnerConfig(QWidget* parent, const QVariantList& args): KCModule(ConfigFactory::componentData(), parent, args)
-{
+EventsRunnerConfig::EventsRunnerConfig(QWidget* parent, const QVariantList& args): KCModule(ConfigFactory::componentData(), parent, args) {
     ui = new EventsRunnerConfigForm(this);
 
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(ui, 0, 0);
 }
 
-
-void EventsRunnerConfig::defaults()
-{
+void EventsRunnerConfig::defaults() {
     KCModule::defaults();
 }
 
-void EventsRunnerConfig::load()
-{
+void EventsRunnerConfig::load() {
     KCModule::load();
+
+    CollectionSelector * selector = new CollectionSelector( this );
+    connect( selector, SIGNAL( collectionsReceived(CollectionSelector &) ), this, SLOT( collectionsReceived(CollectionSelector &) ) );
+    selector->receiveCollections();
 }
 
-void EventsRunnerConfig::save()
-{
+void EventsRunnerConfig::collectionsReceived( CollectionSelector& selector ) {
+    KConfigGroup cfg = config();
+
+    Collection::Id eventCollectionId = cfg.readEntry( CONFIG_EVENT_COLLECTION, (Collection::Id)0 );
+    Collection::Id todoCollectionId = cfg.readEntry( CONFIG_TODO_COLLECTION, (Collection::Id)0 );
+
+    ui->eventCollectionCombo->clear();
+    ui->todoCollectionCombo->clear();
+
+    foreach ( const Collection & collection, selector.eventCollections ) {
+        ui->eventCollectionCombo->addItem( collection.name(), collection.id() );
+
+        if ( collection.id() == eventCollectionId )
+            ui->eventCollectionCombo->setCurrentIndex( ui->eventCollectionCombo->count() - 1 );
+    }
+
+    foreach ( const Collection & collection, selector.todoCollections ) {
+        ui->todoCollectionCombo->addItem( collection.name(), collection.id() );
+
+        if ( collection.id() == todoCollectionId )
+            ui->todoCollectionCombo->setCurrentIndex( ui->todoCollectionCombo->count() - 1 );
+    }
+
+    selector.deleteLater();
+}
+
+void EventsRunnerConfig::save() {
     KCModule::save();
+    KConfigGroup cfg = config();
+
+    cfg.writeEntry( CONFIG_EVENT_COLLECTION, ui->eventCollectionCombo->itemData( ui->eventCollectionCombo->currentIndex() ).toLongLong() );
+    cfg.writeEntry( CONFIG_TODO_COLLECTION, ui->todoCollectionCombo->itemData( ui->todoCollectionCombo->currentIndex() ).toLongLong() );
+}
+
+KConfigGroup EventsRunnerConfig::config() {
+    KSharedConfig::Ptr cfg = KSharedConfig::openConfig("krunnerrc");
+    KConfigGroup grp = cfg->group("Runners");
+    return KConfigGroup(&grp, RUNNER_NAME);
 }

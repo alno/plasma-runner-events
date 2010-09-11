@@ -18,55 +18,44 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EVENTS_CONFIG_H
-#define EVENTS_CONFIG_H
+#ifndef COLLECTION_SELECTOR_H
+#define COLLECTION_SELECTOR_H
 
 //Project-Includes
-#include "ui_events_config.h"
 
 //KDE-Includes
-#include <KCModule>
 #include <Akonadi/Collection>
 
 //Qt
 
-static const char RUNNER_NAME[] = "Events Runner";
+// Mime types
+static const QString eventMimeType( "application/x-vnd.akonadi.calendar.event" );
+static const QString todoMimeType( "application/x-vnd.akonadi.calendar.todo" );
 
-static const char CONFIG_TODO_COLLECTION[] = "todoCollection";
-static const char CONFIG_EVENT_COLLECTION[] = "eventCollection";
-
-class CollectionSelector;
-
-class EventsRunnerConfigForm : public QWidget, public Ui_EventsRunnerConfig
+class CollectionSelector : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit EventsRunnerConfigForm(QWidget* parent);
-};
+    explicit CollectionSelector( QObject* parent );
 
-class EventsRunnerConfig : public KCModule
-{
-    Q_OBJECT
+    void receiveCollections();
 
-public:
-    explicit EventsRunnerConfig(QWidget* parent = 0, const QVariantList& args = QVariantList());
+    Akonadi::Collection selectTodoCollection( Akonadi::Entity::Id id ) { return selectCollectionById( todoCollections, id ); }
+    Akonadi::Collection selectEventCollection( Akonadi::Entity::Id id ) { return selectCollectionById( eventCollections, id ); }
 
-public slots:
-    void save();
-    void load();
-    void defaults();
-
-private:
-    KConfigGroup config();
-
-private slots:
-
+signals:
     void collectionsReceived( CollectionSelector & selector );
 
-private:
-    EventsRunnerConfigForm* ui;
+public:
     Akonadi::Collection::List todoCollections;
     Akonadi::Collection::List eventCollections;
+
+private:
+    static Akonadi::Collection selectCollectionById( const Akonadi::Collection::List & collections, Akonadi::Entity::Id id );
+
+private slots:
+    void akonadiCollectionsReceived( const Akonadi::Collection::List & collections );
 };
+
 #endif
