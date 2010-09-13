@@ -38,6 +38,9 @@ EventsRunnerConfig::EventsRunnerConfig(QWidget* parent, const QVariantList& args
 
     QGridLayout* layout = new QGridLayout(this);
     layout->addWidget(ui, 0, 0);
+
+    connect( ui->eventCollectionCombo, SIGNAL( currentIndexChanged(int) ), this, SLOT( changed() ) );
+    connect( ui->todoCollectionCombo, SIGNAL( currentIndexChanged(int) ), this, SLOT( changed() ) );
 }
 
 void EventsRunnerConfig::defaults() {
@@ -76,6 +79,8 @@ void EventsRunnerConfig::collectionsReceived( CollectionSelector& selector ) {
     }
 
     selector.deleteLater();
+
+    emit changed(false);
 }
 
 void EventsRunnerConfig::save() {
@@ -84,6 +89,8 @@ void EventsRunnerConfig::save() {
 
     cfg.writeEntry( CONFIG_EVENT_COLLECTION, ui->eventCollectionCombo->itemData( ui->eventCollectionCombo->currentIndex() ).toLongLong() );
     cfg.writeEntry( CONFIG_TODO_COLLECTION, ui->todoCollectionCombo->itemData( ui->todoCollectionCombo->currentIndex() ).toLongLong() );
+
+    emit changed(true);
 }
 
 KConfigGroup EventsRunnerConfig::config() {
