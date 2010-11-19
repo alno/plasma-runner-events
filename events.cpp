@@ -358,7 +358,20 @@ Plasma::QueryMatch EventsRunner::createShowMatch( const Item & item, MatchType t
         if ( KCal::Todo * todo = dynamic_cast<KCal::Todo *>( incidence.get() ) ) {
             match.setSubtext( i18n( "Date: %1", dateTimeToString( todo->dtDue() ) ) );
         } else if ( KCal::Event * event = dynamic_cast<KCal::Event *>( incidence.get() ) ) {
-            match.setSubtext( i18n( "Date: %1", dateTimeToString( event->dtStart() ) ) );
+            if ( event->recurs() ) {
+                QString dates = "";
+
+                foreach ( const KDateTime & dt, event->recurrence()->timesInInterval( range.start, range.finish ) ) {
+                    if ( !dates.isEmpty() )
+                        dates += ", ";
+
+                    dates += dateTimeToString( dt );
+                }
+
+                match.setSubtext( i18n( "Date: %1", dates ) );
+            } else {
+                match.setSubtext( i18n( "Date: %1", dateTimeToString( event->dtStart() ) ) );
+            }
         }
 
         data["item"] = qVariantFromValue( item );
