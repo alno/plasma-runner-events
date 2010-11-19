@@ -74,6 +74,7 @@ EventsRunner::EventsRunner(QObject *parent, const QVariantList& args)
     Q_UNUSED(args);
 
     setObjectName(RUNNER_NAME);
+    setSpeed(SlowSpeed);
 
     icon = KIcon( QLatin1String( "text-calendar" ) );
 
@@ -396,7 +397,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
         return;
 
     if ( term.startsWith( eventsKeyword ) ) {
-        QStringList args = splitArguments( term.mid( eventsKeyword.length() ) );
+        const QStringList args = splitArguments( term.mid( eventsKeyword.length() ) );
         DateTimeRange range = dateTimeParser.parseRange( args[0].trimmed() );
 
         if ( range.isValid() ) {
@@ -410,7 +411,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
             }
         }
     } else if ( term.startsWith( todosKeyword ) ) {
-        QStringList args = splitArguments( term.mid( todosKeyword.length() ) );
+        const QStringList args = splitArguments( term.mid( todosKeyword.length() ) );
         DateTimeRange range = dateTimeParser.parseRange( args[0].trimmed() );
 
         if ( range.isValid() ) {
@@ -459,7 +460,7 @@ void EventsRunner::match( Plasma::RunnerContext &context ) {
 void EventsRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match) {
     Q_UNUSED(context)
 
-    QMap<QString,QVariant> data = match.data().toMap();
+    const QMap<QString,QVariant> data = match.data().toMap();
 
     if ( data["type"].toInt() == CreateEvent ) {
         if ( !eventCollection.isValid() ) {
